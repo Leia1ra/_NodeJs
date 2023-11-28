@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Title</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		$(function () {
+			// 방 만들기 : chatting 서버에 접속
+			function createRoom() {
+				let roomName = document.getElementById('roomName');
+				if(roomName.value === ""){
+					alert('방이름을 입력후 방만들기를 진행해 주세요');
+					roomName.focus();
+					return false;
+				}
+				document.getElementById('rName').innerHTML = roomName.value;
+				// 방만들기 숨기기
+				document.getElementById('roomDiv').style.display = 'none'
+				// 채팅방 보이기
+				document.getElementById('chat').style.display = 'block';
+				
+				// 채팅서버연결
+				socket = io.connect();
+				// 방 생성 이벤트 발생
+				socket.emit('join',roomName.value, 'utf-8');
+				
+				// 서버에서 보낸 문자를 받을 이벤트
+				socket.on('response',function (receiveMsg) {
+					$("#chatView").append(`<div>${receiveMsg}</div>`);
+				})
+				
+			}
+			$("#createRoom").click(function () {
+				createRoom();
+			})
+			$("#roomName").keyup(function(){//event
+				if(event.keyCode == 13){
+					createRoom();
+				}
+			})
+			
+			/* 문자보내기 >> 클라이언트 -> 서버 */
+			function sendMessage() {
+				// 메시지 입력 유무 확인
+				let msg = document.getElementById('msg');
+				if(msg.value === ''){
+					msg.focus();
+					return false;
+				}
+				// 서버에 보내기(sendMessage 이벤트 발생);
+				socket.emit('sendMessage', msg.value, 'utf-8');
+				
+				// msg 비우기
+				msg.value = "";
+				msg.focus();
+			}
+			$("#msg").keyup(function () {
+				if(event.keyCode === 13){
+					sendMessage();
+				}
+				$("#sendMsg").click(function () {
+					sendMessage();
+				})
+			})
+		});
+	</script>
+</head>
+<body>
+
+<h1>단체 채팅하기</h1>
+<div id="roomDiv">
+	방만들기 <br>
+	<label>방 이름 : <input type="text" name="roomName" id="roomName"></label>
+	<input type="button" value="방만들기" id="createRoom">
+</div>
+<hr>
+<div id="chat" style="display: none">
+	<div id="sendMessage">
+		<h1 id="rName"></h1>
+		<label>메시지 : <input type="text" name="msg" id="msg"></label>
+		<input type="button" value="보내기" id="sendMsg">
+	</div>
+	<hr>
+	<h1>체팅 내용 보기</h1>
+	<div id="chatView" style="background: beige; width: 50%; height: 500px"></div>
+</div>
+
+</body>
+</html>
